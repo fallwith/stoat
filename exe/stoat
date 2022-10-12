@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require 'stoat'
+require 'tty/option'
+
+module Stoat
+  # Cli: Stoat's CLI entrypoint
+  class Cli
+    include TTY::Option
+
+    usage do
+      no_command
+      footer <<~FOOTER
+        Subcommands:
+          - perf: Fetch and evaluate the latest perf test results
+      FOOTER
+    end
+
+    argument :subcommand
+
+    flag :help do
+      short '-h'
+      long '--help'
+      desc 'Show usage help'
+    end
+
+    flag :version do
+      short '-v'
+      long '--version'
+      desc 'Show version information'
+    end
+
+    def run
+      handle_version
+      handle_help
+      handle_subcommand
+    end
+
+    private
+
+    def handle_version
+      return unless params[:version]
+
+      puts Stoat::VERSION
+      exit
+    end
+
+    def handle_help
+      return unless params[:help] || !params[:subcommand]
+
+      print help
+      exit
+    end
+
+    def handle_subcommand
+      case params[:subcommand]
+      when 'perf'
+        Stoat::Perf.new.go
+      else
+        puts "Unknown subcommand '#{params[:subcommand]}'!"
+      end
+    end
+  end
+end
+
+cmd = Stoat::Cli.new
+cmd.parse
+cmd.run
