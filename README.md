@@ -3,9 +3,7 @@
 Stoat is a little CLI based helper that assists the New Relic Ruby agent team
 with various chores related to releasing new gem versions.
 
-<center>
 ![A stoat with a white winter coat in the snow](./stoat.jpg)
-</center>
 
 
 ## Installation
