@@ -9,6 +9,7 @@ with various chores related to releasing new gem versions.
 ## Installation
 
 - Clone the repo
+- Run `bundle`
 - Run `gem build`
 - Run `gem install --local stoat`
 
