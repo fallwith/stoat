@@ -7,3 +7,4 @@
 /spec/reports/
 /tmp/
 stoat*.gem
+Gemfile.lock
