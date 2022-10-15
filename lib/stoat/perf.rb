@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require 'octokit'
 require 'zip'
 
 require_relative 'helpers'
@@ -12,8 +11,6 @@ module Stoat
   class Perf
     include Helpers
 
-    TOKEN_ENV_VAR = 'NR_GITHUB_TOKEN'
-    REPO = 'newrelic/newrelic-ruby-agent'
     NAME = 'performance-test-results'
     RESULTS_FILE = 'performance_results.md'
     TIME_THRESHOLD = 3.0
@@ -26,17 +23,9 @@ module Stoat
 
     private
 
-    def access_token
-      @access_token ||= begin
-        bail "GitHub Access Token env var '#{TOKEN_ENV_VAR}' not set!" unless ENV.key?(TOKEN_ENV_VAR)
-
-        ENV.fetch(TOKEN_ENV_VAR)
-      end
-    end
-
     # TODO: error handling
     def artifact_url
-      client.repository_artifacts(REPO).artifacts.detect { |a| a.name == NAME }.archive_download_url
+      github.repository_artifacts(REPO).artifacts.detect { |a| a.name == NAME }.archive_download_url
     end
 
     def cleanup_results
@@ -46,10 +35,6 @@ module Stoat
       first_md_line_idx = data.find_index { |line| line.start_with?('|') }
       file_utils.rm_f(RESULTS_FILE)
       File.write(RESULTS_FILE, data[first_md_line_idx..].join("\n"))
-    end
-
-    def client
-      @client ||= Octokit::Client.new(access_token:)
     end
 
     def fetch_latest
@@ -66,7 +51,7 @@ module Stoat
     end
 
     def grab_latest_zip_blob
-      client.get(artifact_url)
+      github.get(artifact_url)
     end
 
     def report

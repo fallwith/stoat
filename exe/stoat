@@ -14,6 +14,7 @@ module Stoat
       no_command
       footer <<~FOOTER
         Subcommands:
+          - gemfile: Update Gemfile and related files
           - perf: Fetch and evaluate the latest perf test results
       FOOTER
     end
@@ -24,6 +25,12 @@ module Stoat
       short '-h'
       long '--help'
       desc 'Show usage help'
+    end
+
+    option :path do
+      short '-p string'
+      long '--path string'
+      desc 'Path to a root dir to look for content in'
     end
 
     flag :version do
@@ -56,6 +63,8 @@ module Stoat
 
     def handle_subcommand
       case params[:subcommand]
+      when 'gemfile'
+        Stoat::Gemfile.new(params[:path]).go
       when 'perf'
         Stoat::Perf.new.go
       else
