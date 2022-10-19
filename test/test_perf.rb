@@ -6,108 +6,64 @@ require 'test_helper'
 class TestPerf < Minitest::Test
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/AbcSize
+  # rubocop:disable Metrics/BlockLength
   def test_go
-    token = 'Is Pluto a planet?'
-    url = 'Bathtub stunt racer'
-    blob = 'Gobo'
-    markdown = 'Ralphie from New York'
+    opwd = Dir.pwd
+    Dir.mktmpdir do |dir|
+      Dir.chdir dir
+      stoat = Stoat::Perf.new
+      def stoat.puts(_txt); end
+      github_mock = MiniTest::Mock.new
+      stoat.instance_variable_set(:@github_mock, github_mock)
+      artifact_mock = MiniTest::Mock.new
+      artifact_mock.expect :name, Stoat::Perf::ARTIFACT
+      fake_url = 'toyota://2000gt'
+      artifact_mock.expect :archive_download_url, fake_url
+      repository_artifacts_mock = MiniTest::Mock.new
+      repository_artifacts_mock.expect :artifacts, [artifact_mock]
+      github_mock.expect :repository_artifacts, repository_artifacts_mock, [Stoat::Helpers::REPO]
+      fake_blob = 'BMT 216A'
+      github_mock.expect :get, fake_blob, [fake_url]
 
-    perf = Stoat::Perf.new
+      def stoat.github
+        @github_mock
+      end
 
-    def perf.file_utils
-      utils = MiniTest::Mock.new
-      utils.expect :rm_f, nil, [String]
-    end
+      markdown = '| Li Hing Mui'
+      unclean_data = md_data(markdown)
+      extractable = []
+      extractable.instance_variable_set(:@unclean_data, unclean_data)
 
-    def perf.puts(txt); end
+      def extractable.extract
+        File.write(Stoat::Perf::RESULTS_FILE, instance_variable_get(:@unclean_data))
+      end
 
-    filename = Stoat::Perf::RESULTS_FILE
-    filename_zip = "#{Stoat::Perf::RESULTS_FILE}.zip"
+      evaluator_mock = MiniTest::Mock.new
+      evaluator_mock.expect :evaluate, nil
 
-    zip_file = MiniTest::Mock.new
-    zip_file.expect :extract, nil
-
-    artifact = MiniTest::Mock.new
-    artifact.expect :name, Stoat::Perf::NAME
-    artifact.expect :archive_download_url, url
-    artifacts = [artifact]
-
-    repository_artifacts = MiniTest::Mock.new
-    repository_artifacts.expect :artifacts, artifacts
-
-    zip_file = MiniTest::Mock.new
-    zip_open = proc do |fname|
-      assert_equal filename_zip, fname
-      [zip_file]
-    end
-
-    evaluator = MiniTest::Mock.new
-    evaluator.expect :evaluate, nil
-
-    octo = MiniTest::Mock.new
-    octo.expect :get, blob, [url]
-    octo.expect :repository_artifacts, repository_artifacts, [Stoat::Perf::REPO]
-
-    ENV.stub :key?, true, [Stoat::Perf::TOKEN_ENV_VAR] do
-      ENV.stub :fetch, token, [Stoat::Perf::TOKEN_ENV_VAR] do
-        Octokit::Client.stub :new, octo do
-          File.stub :write, nil, [filename_zip, blob] do
-            Zip::File.stub :open, zip_open, [filename_zip] do
-              File.stub :exist?, true, [filename] do
-                File.stub :read, md_data(markdown), [filename] do
-                  Stoat::PerfResultsEvaluator.stub :new, evaluator, [filename] do
-                    perf.go
-                  end
-                end
-              end
-            end
-          end
+      Zip::File.stub :open, nil, [extractable] do
+        Stoat::PerfResultsEvaluator.stub :new, evaluator_mock, [Stoat::Perf::RESULTS_FILE] do
+          stoat.go
+          assert_equal markdown, File.read(Stoat::Perf::RESULTS_FILE)
         end
       end
-    end
 
-    zip_file.verify
-    artifact.verify
-    repository_artifacts.verify
-    zip_file.verify
-    evaluator.verify
-    octo.verify
+      github_mock.verify
+      artifact_mock.verify
+      repository_artifacts_mock.verify
+      evaluator_mock.verify
+    end
+  ensure
+    Dir.chdir opwd
   end
   # rubocop:enable Metrics/MethodLength
   # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/BlockLength
 
-  def test_cleanup_results
-    markdown = '| Li Hing Mui'
-    filename = Stoat::Perf::RESULTS_FILE
-    perf = Stoat::Perf.new
-
-    File.stub :exist?, true, [filename] do
-      File.stub :read, md_data(markdown), [filename] do
-        File.stub :write, nil, [filename, markdown] do
-          perf.send :cleanup_results
-        end
-      end
-    end
-  end
-
-  def test_cleanup_results_but_results_are_absent
-    perf = Stoat::Perf.new
-
-    def perf.warn(msg); end
-
-    File.stub :exist?, false, [Stoat::Perf::RESULTS_FILE] do
-      assert_raises(SystemExit) { perf.send :cleanup_results }
-    end
-  end
-
-  def test_access_token_is_not_set_in_env
-    perf = Stoat::Perf.new
-
-    def perf.warn(msg); end
-
-    ENV.stub :key?, false, [Stoat::Perf::TOKEN_ENV_VAR] do
-      assert_raises(SystemExit) { perf.send :access_token }
-    end
+  def test_cleanup_routine_when_markdown_file_is_absent
+    stoat = Stoat::Perf.new
+    def stoat.warn(_msg); end
+    assert_raises(SystemExit) { stoat.send(:cleanup_routine).call }
   end
 
   # helpers

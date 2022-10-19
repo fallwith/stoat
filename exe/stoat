@@ -14,6 +14,7 @@ module Stoat
       no_command
       footer <<~FOOTER
         Subcommands:
+          - coverage: Fetch the latest code coverage results
           - gemfile: Update Gemfile and related files
           - perf: Fetch and evaluate the latest perf test results
       FOOTER
@@ -63,6 +64,8 @@ module Stoat
 
     def handle_subcommand
       case params[:subcommand]
+      when 'coverage'
+        Stoat::Coverage.new.go
       when 'gemfile'
         Stoat::Gemfile.new(params[:path]).go
       when 'perf'

@@ -34,7 +34,7 @@ class TestGemfile < Minitest::Test
   def test_latest_release_fetch_fails
     stoat = fresh_gemfile(nil)
     def stoat.warn(msg)
-      raise "Stoat warned about something unexpected: >#{msg}<" unless msg.match?('kaboom')
+      instance_variable_get(:@test_class).assert_match 'kaboom', msg
     end
 
     def stoat.github
@@ -47,7 +47,7 @@ class TestGemfile < Minitest::Test
     Dir.mktmpdir do |dir|
       stoat = fresh_gemfile(dir)
       def stoat.warn(msg)
-        raise "Stoat warned about something unexpected: >#{msg}<" unless msg.start_with?(/No '\w+' file/)
+        instance_variable_get(:@test_class).assert_match(/^No '\w+' file/, msg)
       end
       assert_raises(SystemExit) { stoat.send(:read_files) }
     end
@@ -56,11 +56,9 @@ class TestGemfile < Minitest::Test
   def test_release_query
     stoat = fresh_gemfile(nil)
     query = stoat.send(:release_query)
-
-    unless query.split("\n")[1] =~ /owner: "([^"]+)", name: "([^"]+)"/
-      raise 'The release query does not appear to be formatted correctly!'
-    end
-
+    query_element_two = query.split("\n")[1]
+    assert_match(/owner: "([^"]+)", name: "([^"]+)"/, query_element_two)
+    query_element_two =~ /owner: "([^"]+)", name: "([^"]+)"/
     repo = [Regexp.last_match(1), Regexp.last_match(2)].join('/')
     assert_equal Stoat::Helpers::REPO, repo
   end
@@ -70,7 +68,7 @@ class TestGemfile < Minitest::Test
     file = 'Bingdao'
 
     def stoat.warn(msg)
-      raise "Stoat warned about something unexpected: >#{msg}<" unless msg.start_with?('Failed to modify')
+      instance_variable_get(:@test_class).assert_match(/^Failed to modify/, msg)
     end
 
     content = 'Same old'
@@ -88,7 +86,9 @@ class TestGemfile < Minitest::Test
   end
 
   def fresh_gemfile(path)
-    Stoat::Gemfile.new(path)
+    s = Stoat::Gemfile.new(path)
+    s.instance_variable_set(:@test_class, self)
+    s
   end
 
   def gemfile_content(gem_version)
