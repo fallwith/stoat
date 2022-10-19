@@ -8,3 +8,4 @@
 /tmp/
 stoat*.gem
 Gemfile.lock
+coverage-report-combined
