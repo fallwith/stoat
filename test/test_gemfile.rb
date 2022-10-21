@@ -4,7 +4,7 @@ require 'fileutils'
 require 'test_helper'
 require 'tmpdir'
 
-# TestGemfile - test lib/gemfile.rb
+# TestGemfile - test lib/stoat/gemfile.rb
 # rubocop:disable Metrics/ClassLength
 class TestGemfile < Minitest::Test
   def test_go
@@ -41,6 +41,19 @@ class TestGemfile < Minitest::Test
       raise 'Earth shattering kaboom'
     end
     assert_raises(SystemExit) { stoat.send(:latest_release) }
+  end
+
+  def test_papers_updates_dont_include_pre_suffix
+    latest_version_without_pre = '8.6.7.5.3.0.9'
+    latest_version = "#{latest_version_without_pre}-pre"
+    data = { original: { Stoat::GemfileHelpers::PAPERSFILE => papers_content(original_version).lines },
+             modified: { Stoat::GemfileHelpers::PAPERSFILE => [] } }
+    stoat = fresh_gemfile(nil)
+    stoat.instance_variable_set(:@latest_version, latest_version)
+    stoat.instance_variable_set(:@data, data)
+    stoat.send :modify_data_papersfile
+    assert_equal papers_content(latest_version_without_pre),
+                 stoat.instance_variable_get(:@data)[:modified][Stoat::GemfileHelpers::PAPERSFILE].join
   end
 
   def test_read_files_when_a_file_is_absent

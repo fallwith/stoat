@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-# TestPerf - test lib/perf.rb
+# TestPerf - test lib/stoat/perf.rb
 class TestPerf < Minitest::Test
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/AbcSize
@@ -20,8 +20,13 @@ class TestPerf < Minitest::Test
       fake_url = 'toyota://2000gt'
       artifact_mock.expect :archive_download_url, fake_url
       repository_artifacts_mock = MiniTest::Mock.new
+      repository_artifacts_mock.expect :nil?, false
       repository_artifacts_mock.expect :artifacts, [artifact_mock]
-      github_mock.expect :repository_artifacts, repository_artifacts_mock, [Stoat::Helpers::REPO]
+      repository_artifacts_mock.expect :artifacts, [artifact_mock]
+      github_mock.expect :repository_artifacts, repository_artifacts_mock do |repo, page:|
+        assert_equal Stoat::Helpers::REPO, repo
+        assert_equal 1, page
+      end
       fake_blob = 'BMT 216A'
       github_mock.expect :get, fake_blob, [fake_url]
 

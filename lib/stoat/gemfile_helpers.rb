@@ -109,7 +109,7 @@ module Stoat
 
     def process_papers_line(line)
       if line =~ /^(\s*newrelic(?:_rpm|-infinite_tracing)-)[^:]+(:.*)$/
-        data[:modified][PAPERSFILE] << "#{Regexp.last_match(1)}#{latest_version}#{Regexp.last_match(2)}\n"
+        data[:modified][PAPERSFILE] << "#{Regexp.last_match(1)}#{latest_version_without_pre}#{Regexp.last_match(2)}\n"
         @papers_modifications += 1
       else
         data[:modified][PAPERSFILE] << line
