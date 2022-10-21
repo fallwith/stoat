@@ -10,13 +10,8 @@ module Stoat
   module ArtifactHelpers
     include Helpers
 
-    # TODO: error handling
     def artifact_url(artifact_name)
-      artifacts.detect { |a| a.name == artifact_name }.archive_download_url
-    end
-
-    def artifacts
-      @artifacts ||= github.repository_artifacts(REPO).artifacts
+      latest_artifact(artifact_name).archive_download_url
     end
 
     def fetch_artifact(artifact_name, cleanup_routine: nil)
@@ -32,6 +27,18 @@ module Stoat
 
     def grab_latest_zip_blob(artifact_name)
       github.get(artifact_url(artifact_name))
+    end
+
+    def latest_artifact(artifact_name)
+      page = 0
+      loop do
+        response = github.repository_artifacts(REPO, page: page += 1)
+        if response.nil? || response.artifacts.empty?
+          bail "Could not find any artifacts named '#{artifact_name}' after #{page} page(s)!"
+        end
+        match = response.artifacts.detect { |a| a.name == artifact_name }
+        break match if match
+      end
     end
 
     def perform_in_dir(dir)

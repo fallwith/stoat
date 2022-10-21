@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-# TestHelpers - test lib/helpers.rb
+# TestHelpers - test lib/stoat/helpers.rb
 class TestHelpers < Minitest::Test
   class Tester
     include Stoat::Helpers

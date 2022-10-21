@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-# TestCoverage - test lib/coverage.rb
+# TestCoverage - test lib/stoat/coverage.rb
 class TestCoverage < Minitest::Test
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/AbcSize
@@ -25,8 +25,13 @@ class TestCoverage < Minitest::Test
       fake_url = 'rupert://davies'
       artifact_mock.expect :archive_download_url, fake_url
       repository_artifacts_mock = MiniTest::Mock.new
+      repository_artifacts_mock.expect :nil?, false
       repository_artifacts_mock.expect :artifacts, [artifact_mock]
-      github_mock.expect :repository_artifacts, repository_artifacts_mock, [Stoat::Helpers::REPO]
+      repository_artifacts_mock.expect :artifacts, [artifact_mock]
+      github_mock.expect :repository_artifacts, repository_artifacts_mock do |repo, page:|
+        assert_equal Stoat::Helpers::REPO, repo
+        assert_equal 1, page
+      end
       github_mock.expect :get, nil, [fake_url]
 
       def stoat.github

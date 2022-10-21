@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-# TestPerfResultsEvaluator - test lib/perf_results_evaluator.rb
+# TestPerfResultsEvaluator - test lib/stoat/perf_results_evaluator.rb
 class TestPerfResultsEvaluator < Minitest::Test
   def test_evaluate_no_issues
     ev = fresh_ev
